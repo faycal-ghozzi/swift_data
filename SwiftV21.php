@@ -29,7 +29,7 @@ try {
     // Construct SQL Query to Filter Data Efficiently
     $sql = "SELECT id, content 
     FROM transactions
-    WHERE content LIKE CONCAT('%F01', :sender, '%')  
+    WHERE content REGEXP CONCAT('\\\\{2:O[0-9]{3}[0-9]{4}[0-9]{6}', :sender)
     AND content REGEXP CONCAT('[CD][0-9]{6}', :currency)";
     // Prepare and Execute the Query
     $stmt = $pdo->prepare($sql);
@@ -73,13 +73,13 @@ try {
 
                         if(($formatted_date>=$filter_start_date_swift)&&($formatted_date<=$filter_end_date_swift)){
                         
-                                // Extract Sender (From {1:})
+                                // Extract receiver (From {1:})
                                 preg_match('/\{1:F\d{2}([A-Z]{12})/', $swift_message, $match);
-                                $sender = $match[1] ?? '';
-
-                                // Extract Receiver (From {2:})
-                                preg_match('/\{2:O\d{3}\d{10}([A-Z]{12})/', $swift_message, $match);
                                 $receiver = $match[1] ?? '';
+
+                                // Extract sender (From {2:})
+                                preg_match('/\{2:O\d{3}\d{10}([A-Z]{12})/', $swift_message, $match);
+                                $sender = $match[1] ?? '';
 
                                 // Extract Opening Balance (`60F`)
                                 preg_match('/:60(M|F):([A-Z])(\d{6})([A-Z]{3})([\d,]+)/', $swift_message, $match);
