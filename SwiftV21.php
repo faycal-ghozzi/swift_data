@@ -138,7 +138,14 @@ try {
             if (empty($swift_message)) {
                 continue; // Skip empty messages
             }
-            $balances_array[] = extractBalances($swift_message);
+            preg_match('/:60(M|F):([A-Z])(\d{6})([A-Z]{3})([\d,]+)/', $swift_message, $match_ob);
+            $formatted_date1 =$match_ob[3];
+            
+           // exit();
+            if(($formatted_date1>=$filter_start_date_swift)&&($formatted_date1<=$filter_end_date_swift)){
+               $balances_array[] = extractBalances($swift_message);
+            
+            }
         }            
     }
     sortBalancesByExtractedNumber($balances_array);
