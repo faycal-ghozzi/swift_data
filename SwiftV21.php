@@ -54,7 +54,7 @@ function extractBalances($swift_message) {
         $balances["Date C"] = "20" . substr($match_cb[3], 0, 2) . "-" . substr($match_cb[3], 2, 2) . "-" . substr($match_cb[3], 4, 2);
         $balances["Amount C"] = str_replace(',', '.', $match_cb[5]);
     }
-    preg_match('/:20:([A-Za-z0-9]+)/', $swift_message, $match);
+    preg_match('/\{1:F\d{2}[A-Z0-9]{12}(\d+)\}/', $swift_message, $match);
    $balances["Extracted Number"] =  $match[1];
     // Extract Transactions (`:61:`) using `extract61()` function
     $balances["Transactions"] = extract61($swift_message);
