@@ -71,7 +71,7 @@ function sortBalancesByExtractedNumber(&$balances_array) {
 function extract61($swift_message) {
     $transactions = []; // Array to store extracted transactions
 
-    preg_match_all('/:61:(\d{6})(\d{4})?(C|CD|CR|DR|DD|D)([\d,]+)(.{4})(.*?)(?=\s+:61:|:62F:)/s', $swift_message, $matches, PREG_SET_ORDER);
+    preg_match_all('/:61:(\d{6})(\d{4})?(C|CD|CR|DR|DD|D)([\d,]+)(.{4})(.*?)(?=\s+:61:|:62(F|M):)/s', $swift_message, $matches, PREG_SET_ORDER);
 
     foreach ($matches as $match) {
         preg_match('/([A-Za-z0-9- ]+)\s*\/\/\s*([A-Za-z0-9]+)/', $match[6], $ref_match);
@@ -83,7 +83,7 @@ function extract61($swift_message) {
         $transactions[] = [
             "Value Date" => $formatted_date, // YYYY-MM-DD
             "Entry Date" => $entry_date, // MM/DD (if available)
-            "Debit Card Mark" => $match[3], // C/D/CD/DR/DD
+            "Debit Card Mark" => $match[3][0], // C/D/CD/DR/DD
             "Amount" => str_replace(',', '.', $match[4]), // Convert amount format
             "Reference for Account Owner" => $ref_match[1] ?? "", // Extracted reference
             "Reference for Account Servicing Institution" => $ref_match[2] ?? "" // Extracted institution reference
@@ -140,12 +140,18 @@ try {
             }
             preg_match('/:60(M|F):([A-Z])(\d{6})([A-Z]{3})([\d,]+)/', $swift_message, $match_ob);
             $formatted_date1 =$match_ob[3];
+            $curr = $match_ob[4];
+            preg_match('/\{2:O\d{3}\d{10}([A-Z]{12})/', $swift_message, $match_receiver);
+            $sn = $match_receiver[1] ?? '';
             
-           // exit();
-            if(($formatted_date1>=$filter_start_date_swift)&&($formatted_date1<=$filter_end_date_swift)){
-               $balances_array[] = extractBalances($swift_message);
-            
-            }
+           if(((($formatted_date1 >= $filter_start_date_swift) 
+           && ($formatted_date1 <= $filter_end_date_swift)) 
+           && ($curr == $filter_currency)) 
+           && ($sn == $filter_sender)) {
+           
+           $balances_array[] = extractBalances($swift_message);
+       }
+       
         }            
     }
     sortBalancesByExtractedNumber($balances_array);
