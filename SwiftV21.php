@@ -43,7 +43,12 @@ function extractBalances($swift_message) {
         $balances["DC Mark"] = $match_ob[2]; // C/D
         $balances["Date"] = "20" . substr($match_ob[3], 0, 2) . "-" . substr($match_ob[3], 2, 2) . "-" . substr($match_ob[3], 4, 2);
         $balances["Currency"] = $match_ob[4];
-        $balances["Amount"] = str_replace(',', '.', $match_ob[5]);
+        $amount = str_replace(',', '.', $match_ob[5]);
+        if($match_ob[2]=='C'){
+            $balances["Amount"] = -1 * (float) $amount;
+        }else{
+            $balances["Amount"] =(float) $amount;
+        }
     }
 
     // Extract Closing Balance (`62F`)
@@ -52,7 +57,13 @@ function extractBalances($swift_message) {
         $balances["ChampC"] = "62" . $match_cb[1]; // 62F or 62M
         $balances["DC Mark C"] = $match_cb[2]; // C/D
         $balances["Date C"] = "20" . substr($match_cb[3], 0, 2) . "-" . substr($match_cb[3], 2, 2) . "-" . substr($match_cb[3], 4, 2);
-        $balances["Amount C"] = str_replace(',', '.', $match_cb[5]);
+         $amount= str_replace(',', '.', $match_cb[5]);
+
+        if($match_cb[2]=='C'){
+            $balances["Amount C"] = -1 * (float) $amount;
+        }else{
+            $balances["Amount C"] =(float) $amount;
+        }
     }
     preg_match('/\{1:F\d{2}[A-Z0-9]{12}(\d+)\}/', $swift_message, $match);
    $balances["Extracted Number"] =  $match[1];
@@ -78,13 +89,21 @@ function extract61($swift_message) {
 
         $formatted_date = "20" . substr($match[1], 0, 2) . "-" . substr($match[1], 2, 2) . "-" . substr($match[1], 4, 2);
         $entry_date = isset($match[2]) ? substr($match[2], 0, 2) . "/" . substr($match[2], 2, 2) : ""; // Handle null entry date
+        
+        $dcm=$match[3][0];
+        $amount = str_replace(',', '.', $match[4]); // Convert amount format
 
+        if ($dcm == 'C') {
+            $amount = -1 * (float) $amount; // Convert to negative float
+        } else {
+            $amount = (float) $amount; // Ensure it is a float
+        }
         // Store extracted data in an array
         $transactions[] = [
             "Value Date" => $formatted_date, // YYYY-MM-DD
             "Entry Date" => $entry_date, // MM/DD (if available)
-            "Debit Card Mark" => $match[3][0], // C/D/CD/DR/DD
-            "Amount" => str_replace(',', '.', $match[4]), // Convert amount format
+            "Debit Card Mark" =>$dcm , // C/D/CD/DR/DD
+            "Amount" => $amount, 
             "Reference for Account Owner" => $ref_match[1] ?? "", // Extracted reference
             "Reference for Account Servicing Institution" => $ref_match[2] ?? "" // Extracted institution reference
         ];
